@@ -1,6 +1,6 @@
 import java.util.Random;
 
-int xStart, yStart, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 200, BLOCK_NO = 10 ;
+int xStart, yStart, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 200, BLOCK_NO = 10 , BLOCK_HEIGHT = 10;
 UserForce user;
 Particle p;
 ForceRegistry forceReg;
@@ -19,13 +19,13 @@ void setup() {
   p = new Particle(150,150,random(0f,.5f),random(0f,.5f),random(0.001f,0.005f)) ; // Create Particle.
   
   // Create the columns of particles for ground blocks.
-  colWidth = width - PLAYER_WIDTH*2 /BLOCK_NO; //10 Columns for blocks.
+  colWidth = (width - PLAYER_WIDTH*2) / BLOCK_NO; //10 Columns for blocks.
   blocks = new Particle[BLOCK_NO][];
   for(int i = 0; i < blocks.length; i++) {
-    int r = int(noise(rand.nextInt(20)));
+    int r = rand.nextInt(10)+1;
     blocks[i] = new Particle[r];
     for(int j = 0; j < r; j++) {
-      Particle p = new Particle(GROUND_LEVEL+j*10,PLAYER_WIDTH+i*colWidth, 0, 0, 0);
+      Particle p = new Particle(PLAYER_WIDTH+i*colWidth, GROUND_LEVEL-j*10, 0, 0, 0);
       blocks[i][j] = p;
     }
   }
@@ -57,11 +57,11 @@ void ground() {
 void drawBlocks() {
   for(int i = 0; i < blocks.length; i++) {
     for(int j = 0; j < blocks[i].length; j++) {
-      if(blocks[i][j] != null) {
+      
         stroke(255);
         fill(0);
-        rect(blocks[i][j].position.x,blocks[i][j].position.y, colWidth, 10);
-      }
+        rect(blocks[i][j].position.x,blocks[i][j].position.y, colWidth, BLOCK_HEIGHT);
+      
     }
   }
 }
