@@ -1,8 +1,13 @@
-int xStart, yStart, xEnd, yEnd, GROUND_LEVEL = 300 ;
+import java.util.Random;
+
+int xStart, yStart, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 200, BLOCK_NO = 10 ;
 UserForce user;
 Particle p;
 ForceRegistry forceReg;
 PImage texture;
+Random rand = new Random();
+Particle[][] blocks;
+int colWidth;
 
 // Specify canvas size, initialise PVector variables
 void setup() {
@@ -12,6 +17,18 @@ void setup() {
   textureWrap(REPEAT);
   
   p = new Particle(150,150,random(0f,.5f),random(0f,.5f),random(0.001f,0.005f)) ; // Create Particle.
+  
+  // Create the columns of particles for ground blocks.
+  colWidth = width - PLAYER_WIDTH*2 /BLOCK_NO; //10 Columns for blocks.
+  blocks = new Particle[BLOCK_NO][];
+  for(int i = 0; i < blocks.length; i++) {
+    int r = int(noise(rand.nextInt(20)));
+    blocks[i] = new Particle[r];
+    for(int j = 0; j < r; j++) {
+      Particle p = new Particle(GROUND_LEVEL+j*10,PLAYER_WIDTH+i*colWidth, 0, 0, 0);
+      blocks[i][j] = p;
+    }
+  }
   
   // Create force registry
   forceReg = new ForceRegistry();
@@ -37,12 +54,25 @@ void ground() {
   rect(0,GROUND_LEVEL, width, 5);
 }
 
+void drawBlocks() {
+  for(int i = 0; i < blocks.length; i++) {
+    for(int j = 0; j < blocks[i].length; j++) {
+      if(blocks[i][j] != null) {
+        stroke(255);
+        fill(0);
+        rect(blocks[i][j].position.x,blocks[i][j].position.y, colWidth, 10);
+      }
+    }
+  }
+}
+
 // clear background, render object and textual desc
 void draw() {
   background(173,216,230); // Sky.
   ground(); // Render the ground texture
   
-  forceReg.updateForces();
+  forceReg.updateForces(); // Update forces in all registered particles
+  drawBlocks();
   
   stroke(0);
   if (mousePressed) line(xStart, yStart, mouseX, mouseY) ;
