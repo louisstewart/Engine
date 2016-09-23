@@ -15,13 +15,13 @@ class ForceRegistry {
    * generator acts upon.
    */
   void add(ForceGenerator fg, Particle p) {
-    if(!registrations.containsKey(fg)) {
-      ArrayList<Particle> n = new ArrayList<Particle>();
+    if(!registrations.containsKey(fg)) { //<>//
+      ArrayList<Particle> n = new ArrayList<Particle>(); //<>//
       n.add(p); // Add in the first particle which is acted upon by the force in fg.
       registrations.put(fg, n);
     }
     else { // Found the force already, so add particle to list
-      registrations.get(fg).add(p);
+      registrations.get(fg).add(p); //<>//
     }
   }
   

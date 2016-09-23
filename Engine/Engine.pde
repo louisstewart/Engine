@@ -20,15 +20,6 @@ void setup() {
   
   // Create the columns of particles for ground blocks.
   colWidth = (width - PLAYER_WIDTH*2) / BLOCK_NO; //10 Columns for blocks.
-  blocks = new Particle[BLOCK_NO][];
-  for(int i = 0; i < blocks.length; i++) {
-    int r = rand.nextInt(10)+1;
-    blocks[i] = new Particle[r];
-    for(int j = 0; j < r; j++) {
-      Particle p = new Particle(PLAYER_WIDTH+i*colWidth, GROUND_LEVEL-j*10, 0, 0, 0);
-      blocks[i][j] = p;
-    }
-  }
   
   // Create force registry
   forceReg = new ForceRegistry();
@@ -39,6 +30,17 @@ void setup() {
   
   forceReg.add(gravity, p);
   forceReg.add(user, p);
+  
+  blocks = new Particle[BLOCK_NO][];
+  for(int i = 0; i < blocks.length; i++) {
+    int r = rand.nextInt(10)+1;
+    blocks[i] = new Particle[r];
+    for(int j = 0; j < r; j++) {
+      Particle p = new Particle(PLAYER_WIDTH+i*colWidth, GROUND_LEVEL-j*10, 0, 0, 0);
+      blocks[i][j] = p;
+      forceReg.add(gravity, p); //<>//
+    }
+  }
 }
 
 void ground() {
@@ -49,19 +51,16 @@ void ground() {
   vertex(width, GROUND_LEVEL, 15, 4);
   vertex(0, GROUND_LEVEL, 0, 4);
   endShape();
-  stroke(124, 252, 0);
-  fill(124, 252, 0);
-  rect(0,GROUND_LEVEL, width, 5);
+  
 }
 
 void drawBlocks() {
   for(int i = 0; i < blocks.length; i++) {
     for(int j = 0; j < blocks[i].length; j++) {
-      
-        stroke(255);
-        fill(0);
-        rect(blocks[i][j].position.x,blocks[i][j].position.y, colWidth, BLOCK_HEIGHT);
-      
+      blocks[i][j].integrate();
+      stroke(255);
+      fill(0);
+      rect(blocks[i][j].position.x,blocks[i][j].position.y, colWidth, BLOCK_HEIGHT);
     }
   }
 }
