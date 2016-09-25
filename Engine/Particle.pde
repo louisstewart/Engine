@@ -38,7 +38,7 @@ class Particle {
     velocity.mult(DAMPING); // Hack in the drag for now
     
     if((position.x < 0) || (position.x > width)) velocity.x = -velocity.x;
-    if((position.y < 0) ||  (position.y > GROUND_LEVEL)) velocity.y = -velocity.y;
+    if((position.y > GROUND_LEVEL)) velocity.y = -velocity.y;
     
     // Zero the force accumulator
     forceAccum.x = 0;
