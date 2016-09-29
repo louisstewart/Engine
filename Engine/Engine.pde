@@ -1,5 +1,5 @@
 static int GROUND_LEVEL = 300;
-PImage texture, grass;
+PImage texture, grass, block;
 Game game;
 
 // Specify canvas size, initialise PVector variables
@@ -8,26 +8,13 @@ void setup() {
   
   // Load in floor texture.
   texture = loadImage("texture.png"); // http://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis
-  grass = loadImage("grass.png"); 
+  grass = loadImage("grass.png"); // Same as above.
+  block = loadImage("block.png"); // Ditto.
   textureMode(NORMAL);
   textureWrap(REPEAT);
   
   game = new Game();
   
-  //forceReg.add(wind, p);
-  //forceReg.add(gravity, p);
-  //forceReg.add(user, p);
-  
-  /*blocks = new Particle[BLOCK_NO][];
-  for(int i = 0; i < blocks.length; i++) {
-    int r = random(0,10)+1;
-    blocks[i] = new Particle[r];
-    for(int j = 0; j < r; j++) {
-      Particle p = new Particle(PLAYER_WIDTH+i*colWidth, GROUND_LEVEL-(j+1)*10, 0, 0, 0); // Infinite mass
-      blocks[i][j] = p;
-      forceReg.add(gravity, p); 
-    }
-  }*/
 }
 
 // clear background, render object and textual desc
@@ -64,14 +51,3 @@ void ground() {
   endShape();
   
 }
-
-/*void drawBlocks() {
-  for(int i = 0; i < blocks.length; i++) {
-    for(int j = 0; j < blocks[i].length; j++) {
-      blocks[i][j].integrate();
-      stroke(255);
-      fill(0);
-      rect(blocks[i][j].position.x,blocks[i][j].position.y, colWidth, BLOCK_HEIGHT);
-    }
-  }
-}*/

@@ -1,7 +1,7 @@
 class Particle {
   
-  private PVector position, velocity, forceAccum; // Use a force accumulator to simplfy multiple forces.
-  private float DAMPING = 0.995f;
+  PVector position, velocity, forceAccum; // Use a force accumulator to simplfy multiple forces.
+  private float DAMPING = 0.997f;
   
   float invMass; // Store inverse mass to ease calculations and allow infinite mass.
   
@@ -13,9 +13,9 @@ class Particle {
     return 1/invMass;
   }
   
-  Particle(int x, int y, float xVel, float yVel, float inverse){
-    position = new PVector(x,y);
-    velocity = new PVector(xVel, yVel);
+  Particle(PVector pos, PVector vel, float inverse){
+    position = pos;
+    velocity = vel;
     forceAccum = new PVector(0f,0f);
     invMass = inverse;  
   }
@@ -38,7 +38,7 @@ class Particle {
     velocity.mult(DAMPING); // Hack in the drag for now
     
     if((position.x < 0) || (position.x > width)) velocity.x = -velocity.x;
-    if((position.y > GROUND_LEVEL)) velocity.y = -velocity.y;
+    if((position.y > height)) velocity.y = -velocity.y; // We will actually do collision detect on particles with the ground, this is just a backup.
     
     // Zero the force accumulator
     forceAccum.x = 0;
