@@ -1,5 +1,5 @@
 static int GROUND_LEVEL = 300;
-PImage texture, grass, block;
+static PImage texture, grass, block;
 Game game;
 
 // Specify canvas size, initialise PVector variables
@@ -21,8 +21,8 @@ void setup() {
 void draw() {
   background(173,216,230); // Sky.
   ground(); // Render the ground texture
-  game.tick();
   game.render();
+  game.tick();
 }
 
 void mousePressed() {

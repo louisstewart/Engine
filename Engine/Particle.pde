@@ -30,7 +30,7 @@ class Particle {
     position.add(velocity); // Update position vector;
     
     // a = f * 1/m 
-    PVector resAcc = forceAccum.get(); // Get the accumulated forces
+    PVector resAcc = forceAccum.copy(); // Get the accumulated forces
     resAcc.mult(invMass);
     
     velocity.add(resAcc);

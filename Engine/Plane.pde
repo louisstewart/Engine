@@ -5,7 +5,7 @@
  */
 final class Plane extends Particle {
   PVector normal; // Normal vector to plane - vector which is perpendicular to it.
-  PVector cnorm; // The contact normal for an object interacting with this line (2D plane)
+  PVector cnorm; // The contact normal for an object interacting with this line (2D plane) - public easy access
   PVector n; // Vector representation of this line.
   int x1, y1, x2, y2;
   
