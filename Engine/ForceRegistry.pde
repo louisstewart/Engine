@@ -40,7 +40,7 @@ class ForceRegistry {
      else {
        return registrations.get(fg).remove(p);
      }
-   }
+   } 
    
    /*
     * Update forces on all particles for each force generator.

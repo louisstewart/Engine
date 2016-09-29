@@ -1,5 +1,6 @@
 static int GROUND_LEVEL = 300;
-static PImage texture, grass, block;
+static PImage texture, grass, block, tRight, tLeft;
+static int GAME_WIDTH = 900, GAME_HEIGHT = 400;
 Game game;
 
 // Specify canvas size, initialise PVector variables
@@ -10,6 +11,8 @@ void setup() {
   texture = loadImage("texture.png"); // http://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis
   grass = loadImage("grass.png"); // Same as above.
   block = loadImage("block.png"); // Ditto.
+  tLeft = loadImage("tankleft.png"); // http://opengameart.org/content/2d-side-scrolling-tank
+  tRight = loadImage("tankright.png");
   textureMode(NORMAL);
   textureWrap(REPEAT);
   
@@ -23,6 +26,14 @@ void draw() {
   ground(); // Render the ground texture
   game.render();
   game.tick();
+}
+
+void keyPressed() {
+  game.keyPressed();
+}
+
+void keyReleased() {
+  game.keyReleased();
 }
 
 void mousePressed() {

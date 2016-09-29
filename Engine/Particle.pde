@@ -1,7 +1,7 @@
 class Particle {
   
   PVector position, velocity, forceAccum; // Use a force accumulator to simplfy multiple forces.
-  private float DAMPING = 0.997f;
+  protected float DAMPING = 0.997f;
   
   float invMass; // Store inverse mass to ease calculations and allow infinite mass.
   

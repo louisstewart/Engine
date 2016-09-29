@@ -12,7 +12,12 @@ class Game {
   long time, prev;
   int fr = int(frameRate);
   
+  Tank p1;
+  Tank p2;
+  
   ForceRegistry forceReg;
+  
+  UserForce p1f, p2f;
   Wind wind;
   Gravity gravity;
   Projectile p;  
@@ -42,6 +47,15 @@ class Game {
     cr = new ContactResolver();
     contacts = new ArrayList<Contact>();
     
+    // Create the players.
+    p1 = new Tank(new PVector(10, GROUND_LEVEL-50), 100, 50, 0.00001, Engine.tRight);
+    p2 = new Tank(new PVector(width-110, GROUND_LEVEL-50), 100, 50, 0.00001, Engine.tLeft);
+    p1f = new UserForce(new PVector(0f,0f));
+    p2f = new UserForce(new PVector(0f,0f));
+    forceReg.add(p1f, p1);
+    forceReg.add(p2f, p2);
+   
+    // Generate the terrain randomly.
     blocks = new Block[BLOCK_NO][];
     for(int i = 0; i < blocks.length; i++) {
       int r = int(random(0,10))+1;
@@ -73,6 +87,10 @@ class Game {
         if(blocks[i][j] != null) blocks[i][j].integrate();
       }
     }
+    //p1f.updateForce(p1);
+    //p2f.updateForce(p2);
+    p1.integrate();
+    p2.integrate();
   }
   
   void render() {
@@ -80,8 +98,8 @@ class Game {
     text("P1 Score: "+p1score, 20, 20);
     text("P2 Score: "+p2score, width-100, 20);
     text("Wind: "+wind, width/2-50, 20);
-    int player = p1turn ? 1 : 2;
-    text("Player "+player+"'s turn!", width/2-40, 40);
+    text("Player "+(p1turn ? 1 : 2)+"'s turn!", width/2-40, 40);
+    
     if(System.currentTimeMillis()/1000 - prev/1000 > 1)  {
       prev = System.currentTimeMillis();
       fr = int(frameRate);
@@ -89,15 +107,17 @@ class Game {
     text(fr+"fps", width/2-20, 60);
   
     drawBlocks();
-    stroke(0);
-    
-    if (mousePressed) line(xStart, yStart, mouseX, mouseY) ;
-    PVector temp = new PVector(mouseX - xStart, mouseY - yStart);
+    drawTanks();
+
+    stroke(0);    
+    if (mousePressed) line(xStart, yStart, mouseX, mouseY);
+    PVector temp = new PVector((mouseX - xStart), (mouseY - yStart));
     int angle = 0;
     int power = 0;
     if(mousePressed) {
         angle = int(-temp.heading()*180.0/PI); // Convert from rad to deg.
         power = int(temp.mag()); // Get magnitude.
+        if(power > 150) power = 150;
       }
     if(p1turn) {
       text("Angle: "+angle, 20, 40);
@@ -120,17 +140,46 @@ class Game {
     }
   }
   
+  void keyPressed() {
+    if(key == CODED) {
+      if(keyCode == LEFT) {
+        if(p1turn) p1f.set(-5000f);
+        else p2f.set(-5000f);
+      }
+      else if(keyCode == RIGHT) {
+        if(p1turn) p1f.set(5000f);
+        else p2f.set(5000f);
+      }
+    }
+  }
+  
+  void keyReleased() {
+    p2f.set(0);
+    p1f.set(0);
+  }
+  
   // When mouse is pressed, store x, y coords
   void mousePressed(int x, int y) {
-    xStart = x ;
-    yStart = y ;
+    if(p1turn) {
+      xStart = int(p1.position.x+p1.width/2);
+      yStart = int(p1.position.y+p1.height/2);
+    }
+    else {
+      xStart = int(p2.position.x+p2.width/2);
+      yStart = int(p2.position.y+p2.height/2);
+    }  
   }
 
   // When mouse is released create new vector relative to stored x, y coords
   void mouseReleased(int x, int y) {
     xEnd = x ;
     yEnd = y ;
-    p = new Projectile(new PVector(xStart,yStart),new PVector((xEnd - xStart)/12, (yEnd - yStart)/12), 0.4f, 5) ; // Create Particle.
+    PVector power = new PVector((xEnd - xStart)/12, (yEnd - yStart)/12);
+    if(power.mag() > 13) {
+      power.normalize();
+      power.mult(13);
+    }
+    p = new Projectile(new PVector(xStart,yStart), power, 0.4f, 5) ; // Create Particle.
     forceReg.add(gravity, p);
     forceReg.add(wind, p);
   }
@@ -154,13 +203,67 @@ class Game {
       } 
     } 
     /*
+     * Projectile and tank collision, very similar to method used for projectile and block.
+     */
+    if(p != null) {
+      // Try P1 tank first.
+      float xp = p.position.x;
+      float yp = p.position.y;
+      int cx = (int)clamp(xp, p1.position.x, p1.position.x+p1.width);
+      int cy = (int)clamp(yp, p1.position.y, p1.position.y+p1.height);
+      PVector collision = new PVector(xp - cx, yp - cy);
+      if(collision.mag() <= p.radius) {
+        // Contact is made. So remove projectile and block, then shift blocks left down in the array.
+        forceReg.remove(wind, p);
+        forceReg.remove(gravity, p);
+        p = null;
+        p2score++; // Give PLAYER 2 a point even if P1 hit self.
+        forceReg.remove(p1f, p1);
+        p1 = null;
+        endTurn();
+      }
+      // Now try P2 Tank.
+      cx = (int)clamp(xp, p2.position.x, p2.position.x+p2.width);
+      cy = (int)clamp(yp, p2.position.y, p2.position.y+p2.height);
+      collision = new PVector(xp - cx, yp - cy);
+      if(collision.mag() <= p.radius) {
+        // Contact is made. So remove projectile and block, then shift blocks left down in the array.
+        forceReg.remove(wind, p);
+        forceReg.remove(gravity, p);
+        p = null;
+        p1score++; // Give PLAYER 1 a point even if P2 hit self.
+        forceReg.remove(p2f, p2);
+        p2 = null;
+        endTurn();
+      }
+    }
+    if(p != null) {
+      /*
+       * Collision between projectile and blocks.
+       */
+       if(!destroyed) {
+         if(p1turn) { // Loop forward across block columns as p1 has x value close to 0.
+           for(int i = 0; i < blocks.length; i++) {
+             if(detectInColumn(blocks[i])) break; 
+           }
+         }
+         else {
+           for(int i = blocks.length-1; i >= 0; i--) {
+             if(detectInColumn(blocks[i])) break;
+           }
+         }
+       } 
+    }
+    /*
      * Now collision detection between blocks
      * Only bother with collisions downward, not concerned about block touching neighbour to left/right
      */
     for(int i = 0; i < blocks.length; i++) {
+      if(blocks[i][0] == null)  continue;
       for(int j = 0; j < blocks[i].length; j++) {
         Block curr = blocks[i][j];
-        if(j == 0) { // Deal with ground case.
+        if(curr == null) break;
+        if(j < 1) { // Deal with ground case.
           PVector c = new PVector(curr.position.x - ground.x1, curr.position.y - ground.y1);
           int collisionDistance = ground.projectOntoNormal(c);
           if(abs(collisionDistance) <= curr.height) {
@@ -172,8 +275,6 @@ class Game {
           Block lower = blocks[i][j-1];
           PVector dist = curr.position.copy();
           dist.sub(lower.position);
-          println(dist.mag());
-          println("Curr height "+curr.height);
           if(abs(dist.mag()) < curr.height) {
             Contact nc = new Contact(curr, null, 0, dist.normalize());
             contacts.add(nc);
@@ -181,25 +282,98 @@ class Game {
         }
       }
     }
-    if(p != null) {
-      /*
-       * Collision between projectile and blocks.
-       */
-       int xp = (int)p.position.x;
-       int yp = (int)p.position.y;
-       if(!destroyed) {
-         for(int i = 0; i < blocks.length; i++) {
-           for(int j = 0; j < blocks[i].length; j++) {
-             if(xp < blocks[i][j].position.x) break;
-           }
+    /*
+     * Tank and wall collisions.
+     */
+     if(p1turn) {
+       for(int i = 0 ; i < blocks.length; i++) {
+         Block temp = blocks[i][0];
+         if(temp == null) continue;
+         PVector dist = new PVector(temp.position.x - p1.position.x, 0);
+         if(dist.mag() <= p1.width) {
+           Contact cn = new Contact(p1, null, 0.5, dist.normalize());
+           contacts.add(cn);
+           break;
          }
-       }  
-    }
+       }
+     }
+     else {
+       for(int i = blocks.length-1 ; i > 0; i--) {
+         Block temp = blocks[i][0];
+         if(temp == null) continue;
+         PVector dist = new PVector(temp.position.x - p2.position.x, 0);
+         if(dist.mag() <= temp.width) { // Tank particle is top left of tank, and block is also top left, so need to check box width this time.
+           Contact cn = new Contact(p2, null, 0.5, dist.normalize());
+           contacts.add(cn);
+           break;
+         }
+       }
+     }
   }
   
   void endTurn() {
     p1turn = !p1turn;
   } 
+  
+  /*
+   * Private method to detect collision between projectile and 
+   * a column of blocks.
+   *
+   */
+  private boolean detectInColumn(Block[] column) {
+    int xp = (int)p.position.x;
+    int yp = (int)p.position.y;
+    for(int j = 0; j < column.length; j++) {
+      Block temp = column[j];
+      // Check if blocks exist in column.
+      if(temp != null) {
+        // If so then check that the particle is inside the box bounded by the blocks co-ordinates.
+        // Find the closest point between projectile center and rectangle
+        int cx = (int)clamp(xp, temp.position.x, temp.position.x+temp.width);
+        int cy = (int)clamp(yp, temp.position.y, temp.position.y+temp.height);
+        PVector collision = new PVector(xp - cx, yp - cy);
+        if(collision.mag() <= p.radius) {
+          // Contact is made. So remove projectile and block, then shift blocks left down in the array.
+          forceReg.remove(wind, p); //<>//
+          forceReg.remove(gravity, p);
+          p = null;
+          forceReg.remove(gravity, temp);
+          column[j] = null;
+          shift(column, j);
+          endTurn();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  
+  /* 
+   * Clamp a vlue to within the range min..max.
+   */
+  private float clamp(float val, float min, float max) {
+    if(val < min) {
+      return min;
+    }
+    else if(val > max) {
+      return max;
+    }
+    return val;
+  }
+  
+  /*
+   * Shift values down an array and fill the empty space with null.
+   */
+  private void shift(Block[] shifty, int index) {
+    if(index >= shifty.length) return;
+    else {
+      for(int next = index+1; next < shifty.length; next++) {
+        shifty[index++] = shifty[next];
+        shifty[next] = null;
+      }
+    }
+  }
+    
   
   private void drawBlocks() {
     for(int i = 0; i < blocks.length; i++) {
@@ -219,6 +393,25 @@ class Game {
         }
       }
     }
+  }
+  
+  private void drawTanks() {
+    // p1 first.
+    beginShape();
+    texture(p1.texture);
+    vertex(p1.position.x, p1.position.y, 0, 0);
+    vertex(p1.position.x+p1.width, p1.position.y, 1, 0);
+    vertex(p1.position.x+p1.width, p1.position.y+p1.height, 1, 1);
+    vertex(p1.position.x, p1.position.y+p1.height, 0, 1);
+    endShape();
+    // p2.
+    beginShape();
+    texture(p2.texture);
+    vertex(p2.position.x, p2.position.y, 0, 0);
+    vertex(p2.position.x+p2.width, p2.position.y, 1, 0);
+    vertex(p2.position.x+p2.width, p2.position.y+p2.height, 1, 1);
+    vertex(p2.position.x, p2.position.y+p2.height, 0, 1);
+    endShape();
   }
   
 }
