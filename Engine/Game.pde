@@ -44,7 +44,7 @@ class Game {
     
     blocks = new Block[BLOCK_NO][];
     for(int i = 0; i < blocks.length; i++) {
-      int r = int(random(0,7))+1;
+      int r = int(random(0,10))+1;
       blocks[i] = new Block[r];
       for(int j = 0; j < r; j++) {
         Block b = new Block(new PVector(PLAYER_WIDTH+i*blockWidth, GROUND_LEVEL-((j+1)*BLOCK_HEIGHT)), blockWidth, BLOCK_HEIGHT, 0.0000001); // Finite mass so gravity works.
@@ -140,16 +140,18 @@ class Game {
   }
   
   private void detectCollisions() {
+    boolean destroyed = false;
     if(p != null) {
       // Check for collision with the ground first, as this is fairly easy.
       PVector c = new PVector(p.position.x - ground.x1, p.position.y - ground.y1);
       int collisionDistance = ground.projectOntoNormal(c);
-      if(abs(collisionDistance) <= p.radius/2) {
+      if(abs(collisionDistance) <= p.radius) {
         forceReg.remove(wind, p);
         forceReg.remove(gravity, p);
         p = null;
         endTurn();
-      }
+        destroyed = true;
+      } 
     } 
     /*
      * Now collision detection between blocks
@@ -179,15 +181,20 @@ class Game {
         }
       }
     }
-    /*
-     * Collision between projectile and blocks.
-     */
-     for(int i = 0; i < blocks.length; i++) {
-       for(int j = 0; j < blocks[i].length; j++) {
-         
-       }
-     }
-         
+    if(p != null) {
+      /*
+       * Collision between projectile and blocks.
+       */
+       int xp = (int)p.position.x;
+       int yp = (int)p.position.y;
+       if(!destroyed) {
+         for(int i = 0; i < blocks.length; i++) {
+           for(int j = 0; j < blocks[i].length; j++) {
+             if(xp < blocks[i][j].position.x) break;
+           }
+         }
+       }  
+    }
   }
   
   void endTurn() {
