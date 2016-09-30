@@ -1,11 +1,12 @@
 static int GROUND_LEVEL = 300;
-static PImage texture, grass, block, tRight, tLeft;
-static int GAME_WIDTH = 900, GAME_HEIGHT = 400;
+static PImage texture, grass, block, tRight, tLeft, wall;
+static int GAME_WIDTH = 1100, GAME_HEIGHT = 400;
+static PFont main, sans;
 Game game;
 
 // Specify canvas size, initialise PVector variables
 void setup() {
-  size(900, 400, P2D) ;
+  size(1100, 400, P2D) ;
   
   // Load in floor texture.
   texture = loadImage("texture.png"); // http://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis
@@ -13,6 +14,9 @@ void setup() {
   block = loadImage("block.png"); // Ditto.
   tLeft = loadImage("tankleft.png"); // http://opengameart.org/content/2d-side-scrolling-tank
   tRight = loadImage("tankright.png");
+  wall = loadImage("wall.png");
+  main = loadFont("TannenbergFett-48.vlw");
+  sans = loadFont("HelveticaNeue-48.vlw");
   textureMode(NORMAL);
   textureWrap(REPEAT);
   

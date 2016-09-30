@@ -7,10 +7,11 @@
  */
 class Game {
   
-  private boolean p1turn = true;
-  int xStart = 0, yStart = 0, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 200, BLOCK_NO = 10, BLOCK_HEIGHT = 20, blockWidth, p1score = 0, p2score = 0;
-  long time, prev;
+  private boolean p1turn = true, hit = false, gameOver = false, gameStart = false;
+  int xStart = 0, yStart = 0, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 250, BLOCK_NO = 10, BLOCK_HEIGHT = 20, blockWidth, p1score = 0, p2score = 0;
+  long time, prev, hitScreenEnd;
   int fr = int(frameRate);
+  
   
   Tank p1;
   Tank p2;
@@ -69,17 +70,25 @@ class Game {
   }
   
   void tick() {
-    forceReg.updateForces(); // Update forces in all registered particles
-    integrate();
-    detectCollisions();
-    if(System.currentTimeMillis()/1000 > time) {
-      time = setTimeout();
-      wind.randomWind();
+    if(p1score == 10 || p2score == 10) {
+      gameOver = true;
     }
-    cr.resolveContacts(contacts);
-    contacts.clear();
+    if(!gameOver && gameStart) {
+      forceReg.updateForces(); // Update forces in all registered particles
+      integrate(); // Apply forces.
+      detectCollisions(); // No guessing what this does.
+      if(System.currentTimeMillis()/1000 > time) { // Apply some random wind at a random time.
+        time = setTimeout();
+        wind.randomWind();
+      }
+      cr.resolveContacts(contacts); // Resolve the contacts.
+      contacts.clear();
+    }
   }
   
+  /*
+   * Apply the forcces to all of the active particles in the game.
+   */
   void integrate() {
     if(p != null) p.integrate();
     for(int i = 0; i < blocks.length; i++) {
@@ -87,56 +96,70 @@ class Game {
         if(blocks[i][j] != null) blocks[i][j].integrate();
       }
     }
-    //p1f.updateForce(p1);
-    //p2f.updateForce(p2);
-    p1.integrate();
-    p2.integrate();
+    if(p1 != null) p1.integrate();
+    if(p2 != null) p2.integrate();
   }
   
+  /*
+   * Update the graphics.
+   */
   void render() {
-    fill(0);
-    text("P1 Score: "+p1score, 20, 20);
-    text("P2 Score: "+p2score, width-100, 20);
-    text("Wind: "+wind, width/2-50, 20);
-    text("Player "+(p1turn ? 1 : 2)+"'s turn!", width/2-40, 40);
-    
-    if(System.currentTimeMillis()/1000 - prev/1000 > 1)  {
-      prev = System.currentTimeMillis();
-      fr = int(frameRate);
+    if(!gameStart) {
+      drawMainScreen();
     }
-    text(fr+"fps", width/2-20, 60);
+    else if(gameOver) {
+      drawGameOver();
+    }
+    else if(hit) {
+      drawHitScreen();
+    }
+    else {
+      textFont(Engine.sans, 16);
+      textAlign(LEFT, CENTER);
+      fill(0);
+      text("P1 Score: "+p1score, 20, 20);
+      text("P2 Score: "+p2score, width-100, 20);
+      text("Wind: "+wind, width/2-50, 20);
+      text("Player "+(p1turn ? 1 : 2)+"'s turn!", width/2-40, 40);
+    
+      if(System.currentTimeMillis()/1000 - prev/1000 > 1)  {
+        prev = System.currentTimeMillis();
+        fr = int(frameRate);
+      }
+      text(fr+"fps", width/2-20, 60);
   
-    drawBlocks();
-    drawTanks();
+      drawBlocks();
+      drawTanks();
 
-    stroke(0);    
-    if (mousePressed) line(xStart, yStart, mouseX, mouseY);
-    PVector temp = new PVector((mouseX - xStart), (mouseY - yStart));
-    int angle = 0;
-    int power = 0;
-    if(mousePressed) {
+      stroke(0);    
+      if (mousePressed) line(xStart, yStart, mouseX, mouseY);
+      PVector temp = new PVector((mouseX - xStart), (mouseY - yStart));
+      int angle = 0;
+      int power = 0;
+      if(mousePressed) {
         angle = int(-temp.heading()*180.0/PI); // Convert from rad to deg.
         power = int(temp.mag()); // Get magnitude.
         if(power > 150) power = 150;
       }
-    if(p1turn) {
-      text("Angle: "+angle, 20, 40);
-      text("Power: "+power, 20, 60);
-      text("Angle: "+0, width-100, 40);
-      text("Power: "+0, width-100, 60);
-    }
-    else {
-      if(mousePressed)angle = (int)(angle-90); // Fix the angle for calculating from the opposite direction.
-      text("Angle: "+0, 20, 40);
-      text("Power: "+0, 20, 60);
-      text("Angle: "+angle, width-100, 40);
-      text("Power: "+power, width-100, 60);
-    }
+      if(p1turn) {
+        text("Angle: "+angle, 20, 40);
+        text("Power: "+power, 20, 60);
+        text("Angle: "+0, width-100, 40);
+        text("Power: "+0, width-100, 60);
+      }
+      else {
+        if(mousePressed)angle = (int)(angle-90); // Fix the angle for calculating from the opposite direction.
+        text("Angle: "+0, 20, 40);
+        text("Power: "+0, 20, 60);
+        text("Angle: "+angle, width-100, 40);
+        text("Power: "+power, width-100, 60);
+      }
     
-    if(p != null) {
-      stroke(255);
-      fill(0);
-      ellipse(p.position.x, p.position.y, p.radius, p.radius);
+      if(p != null) {
+        stroke(255);
+        fill(0);
+        ellipse(p.position.x, p.position.y, p.radius, p.radius);
+      }
     }
   }
   
@@ -151,6 +174,9 @@ class Game {
         else p2f.set(5000f);
       }
     }
+    else if(key == ENTER || key == RETURN) {
+      gameStart = true;
+    }
   }
   
   void keyReleased() {
@@ -161,12 +187,12 @@ class Game {
   // When mouse is pressed, store x, y coords
   void mousePressed(int x, int y) {
     if(p1turn) {
-      xStart = int(p1.position.x+p1.width/2);
-      yStart = int(p1.position.y+p1.height/2);
+      xStart = int(p1.position.x+p1.width);
+      yStart = int(p1.position.y-1);
     }
     else {
-      xStart = int(p2.position.x+p2.width/2);
-      yStart = int(p2.position.y+p2.height/2);
+      xStart = int(p2.position.x);
+      yStart = int(p2.position.y-1);
     }  
   }
 
@@ -198,7 +224,7 @@ class Game {
         forceReg.remove(wind, p);
         forceReg.remove(gravity, p);
         p = null;
-        endTurn();
+        endTurn(false);
         destroyed = true;
       } 
     } 
@@ -218,9 +244,8 @@ class Game {
         forceReg.remove(gravity, p);
         p = null;
         p2score++; // Give PLAYER 2 a point even if P1 hit self.
-        forceReg.remove(p1f, p1);
-        p1 = null;
-        endTurn();
+        endTurn(true);
+        return;
       }
       // Now try P2 Tank.
       cx = (int)clamp(xp, p2.position.x, p2.position.x+p2.width);
@@ -232,9 +257,8 @@ class Game {
         forceReg.remove(gravity, p);
         p = null;
         p1score++; // Give PLAYER 1 a point even if P2 hit self.
-        forceReg.remove(p2f, p2);
-        p2 = null;
-        endTurn();
+        endTurn(true);
+        return;
       }
     }
     if(p != null) {
@@ -285,7 +309,7 @@ class Game {
     /*
      * Tank and wall collisions.
      */
-     if(p1turn) {
+     if(p1turn && p1 != null) {
        for(int i = 0 ; i < blocks.length; i++) {
          Block temp = blocks[i][0];
          if(temp == null) continue;
@@ -297,7 +321,7 @@ class Game {
          }
        }
      }
-     else {
+     else if(p2 != null){
        for(int i = blocks.length-1 ; i > 0; i--) {
          Block temp = blocks[i][0];
          if(temp == null) continue;
@@ -311,8 +335,10 @@ class Game {
      }
   }
   
-  void endTurn() {
+  void endTurn(boolean hit) {
     p1turn = !p1turn;
+    hitScreenEnd = System.currentTimeMillis()+3000;
+    this.hit = hit;
   } 
   
   /*
@@ -340,7 +366,7 @@ class Game {
           forceReg.remove(gravity, temp);
           column[j] = null;
           shift(column, j);
-          endTurn();
+          endTurn(false);
           return true;
         }
       }
@@ -373,16 +399,59 @@ class Game {
       }
     }
   }
-    
+  
+  private void drawMainScreen() {
+    drawWallTexture();
+    fill(255);
+    textFont(Engine.main, 100);
+    textAlign(CENTER, BOTTOM);
+    text("Tankie", int(width/2)-1, int(height/2)); 
+    text("Tankie", int(width/2), int(height/2)-1); 
+    text("Tankie", int(width/2)+1, int(height/2)); 
+    text("Tankie", int(width/2), int(height/2)+1); 
+    fill(0);
+    text("Tankie", width/2, height/2);
+    fill(255);
+    textFont(Engine.sans, 20);
+    textAlign(LEFT, TOP);
+    text("Move:", 200, height/2+50); 
+    text("Left & Right Keys", 200, height/2+75);
+    textAlign(CENTER, TOP);
+    text("Play:", width/2, height/2+50);
+    text("Press Enter", width/2, height/2+75);
+    textAlign(RIGHT, TOP);
+    text("Aim:", 900, height/2+50);
+    text("Draw Vector", 900, height/2+75);
+  }
+  
+  private void drawGameOver() {
+    drawWallTexture();
+    fill(255);
+    textFont(Engine.main, 100);
+    textAlign(CENTER, BOTTOM);
+    text("GAME OVER!", int(width/2)-1, int(height/2)); 
+    text("GAME OVER!", int(width/2), int(height/2)-1); 
+    text("GAME OVER!", int(width/2)+1, int(height/2)); 
+    text("GAME OVER!", int(width/2), int(height/2)+1); 
+    fill(0);
+    text("GAME OVER!", width/2, height/2);
+    // If it's now player 1's turn, then p2 scored.
+    String player = p1score == 10 ? "Player 1 Wins" : "Player 2 Wins";
+    textSize(50);
+    fill(255);
+    text(player, int(width/2)-1, int(height/2)+100); 
+    text(player, int(width/2), int(height/2)+99); 
+    text(player, int(width/2)+1, int(height/2)+100); 
+    text(player, int(width/2), int(height/2)+101); 
+    fill(0);
+    text(player, width/2, height/2+100);
+  }
   
   private void drawBlocks() {
     for(int i = 0; i < blocks.length; i++) {
       for(int j = 0; j < blocks[i].length; j++) {
         Block temp = blocks[i][j];
         if(temp != null) {
-          //stroke(255);
-          /*fill(0);
-          rect(temp.position.x,temp.position.y, temp.width, temp.height);*/
           beginShape();
           texture(Engine.block);
           vertex(temp.position.x, temp.position.y+temp.height, 0, 0);
@@ -395,23 +464,63 @@ class Game {
     }
   }
   
-  private void drawTanks() {
-    // p1 first.
+  private void drawWallTexture() {
     beginShape();
-    texture(p1.texture);
-    vertex(p1.position.x, p1.position.y, 0, 0);
-    vertex(p1.position.x+p1.width, p1.position.y, 1, 0);
-    vertex(p1.position.x+p1.width, p1.position.y+p1.height, 1, 1);
-    vertex(p1.position.x, p1.position.y+p1.height, 0, 1);
-    endShape();
-    // p2.
-    beginShape();
-    texture(p2.texture);
-    vertex(p2.position.x, p2.position.y, 0, 0);
-    vertex(p2.position.x+p2.width, p2.position.y, 1, 0);
-    vertex(p2.position.x+p2.width, p2.position.y+p2.height, 1, 1);
-    vertex(p2.position.x, p2.position.y+p2.height, 0, 1);
+    texture(Engine.wall);
+    vertex(0, 0, 0, 0);
+    vertex(width, 0, 2, 0);
+    vertex(width, height, 2, 1);
+    vertex(0, height, 0, 1);
     endShape();
   }
   
+  private void drawTanks() {
+    // p1 first.
+    if(p1 != null) {
+      beginShape();
+      texture(p1.texture);
+      vertex(p1.position.x, p1.position.y, 0, 0);
+      vertex(p1.position.x+p1.width, p1.position.y, 1, 0);
+      vertex(p1.position.x+p1.width, p1.position.y+p1.height, 1, 1);
+      vertex(p1.position.x, p1.position.y+p1.height, 0, 1);
+      endShape();
+    }
+    // p2.
+    if(p2 != null){
+      beginShape();
+      texture(p2.texture);
+      vertex(p2.position.x, p2.position.y, 0, 0);
+      vertex(p2.position.x+p2.width, p2.position.y, 1, 0);
+      vertex(p2.position.x+p2.width, p2.position.y+p2.height, 1, 1);
+      vertex(p2.position.x, p2.position.y+p2.height, 0, 1);
+      endShape();
+    }
+  }
+  
+  private void drawHitScreen() {
+    if(System.currentTimeMillis() >= hitScreenEnd) {
+      hit = false;
+      return;
+    }
+    drawWallTexture();
+    fill(255);
+    textFont(Engine.main, 100);
+    textAlign(CENTER, BOTTOM);
+    text("HIT!", int(width/2)-1, int(height/2)); 
+    text("HIT!", int(width/2), int(height/2)-1); 
+    text("HIT!", int(width/2)+1, int(height/2)); 
+    text("HIT!", int(width/2), int(height/2)+1); 
+    fill(0);
+    text("HIT!", width/2, height/2);
+    // If it's now player 1's turn, then p2 scored.
+    String player = p1turn ? "Player 2 Scored" : "Player 1 Scored";
+    textSize(50);
+    fill(255);
+    text(player, int(width/2)-1, int(height/2)+100); 
+    text(player, int(width/2), int(height/2)+99); 
+    text(player, int(width/2)+1, int(height/2)+100); 
+    text(player, int(width/2), int(height/2)+101); 
+    fill(0);
+    text(player, width/2, height/2+100);
+  }
 }
