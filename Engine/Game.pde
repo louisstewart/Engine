@@ -7,11 +7,10 @@
  */
 class Game {
   
-  private boolean p1turn = true, hit = false, gameOver = false, gameStart = false;
-  int xStart = 0, yStart = 0, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 250, BLOCK_NO = 10, BLOCK_HEIGHT = 20, blockWidth, p1score = 0, p2score = 0;
+  private boolean p1turn = true, hit = false, gameOver = false, gameStart = false, fired = false;
+  int xStart = 0, yStart = 0, xEnd, yEnd, GROUND_LEVEL = 300, PLAYER_WIDTH = 250, BLOCK_NO = 10, MAX_BLOCKS = 10, BLOCK_HEIGHT = 20, blockWidth, p1score = 0, p2score = 0;
   long time, prev, hitScreenEnd;
   int fr = int(frameRate);
-  
   
   Tank p1;
   Tank p2;
@@ -59,7 +58,7 @@ class Game {
     // Generate the terrain randomly.
     blocks = new Block[BLOCK_NO][];
     for(int i = 0; i < blocks.length; i++) {
-      int r = int(random(0,10))+1;
+      int r = int(random(0,MAX_BLOCKS))+1;
       blocks[i] = new Block[r];
       for(int j = 0; j < r; j++) {
         Block b = new Block(new PVector(PLAYER_WIDTH+i*blockWidth, GROUND_LEVEL-((j+1)*BLOCK_HEIGHT)), blockWidth, BLOCK_HEIGHT, 0.0000001); // Finite mass so gravity works.
@@ -186,28 +185,33 @@ class Game {
   
   // When mouse is pressed, store x, y coords
   void mousePressed(int x, int y) {
-    if(p1turn) {
-      xStart = int(p1.position.x+p1.width);
-      yStart = int(p1.position.y-1);
+    if(!fired) {
+      if(p1turn) {
+        xStart = int(p1.position.x+p1.width);
+        yStart = int(p1.position.y-1);
+      }
+      else {
+        xStart = int(p2.position.x);
+        yStart = int(p2.position.y-1);
+      }    
     }
-    else {
-      xStart = int(p2.position.x);
-      yStart = int(p2.position.y-1);
-    }  
   }
 
   // When mouse is released create new vector relative to stored x, y coords
   void mouseReleased(int x, int y) {
-    xEnd = x ;
-    yEnd = y ;
-    PVector power = new PVector((xEnd - xStart)/12, (yEnd - yStart)/12);
-    if(power.mag() > 13) {
-      power.normalize();
-      power.mult(13);
+    if(!fired && !hit) {
+      xEnd = x ;
+      yEnd = y ;
+      PVector power = new PVector((xEnd - xStart), (yEnd - yStart));
+      if(power.mag() > 12) {
+        power.normalize();
+        power.mult(12);
+      }
+      p = new Projectile(new PVector(xStart,yStart), power, 0.2f, 5) ; // Create Particle.
+      forceReg.add(gravity, p);
+      forceReg.add(wind, p);
+      fired = true;
     }
-    p = new Projectile(new PVector(xStart,yStart), power, 0.4f, 5) ; // Create Particle.
-    forceReg.add(gravity, p);
-    forceReg.add(wind, p);
   }
   
   private long setTimeout() {
@@ -216,6 +220,15 @@ class Game {
   
   private void detectCollisions() {
     boolean destroyed = false;
+    if(p != null) {
+      if(p.position.x > width || p.position.x < 0) {
+        forceReg.remove(wind, p);
+        forceReg.remove(gravity, p);
+        p = null;
+        endTurn(false);
+        destroyed = true;
+      } 
+    } 
     if(p != null) {
       // Check for collision with the ground first, as this is fairly easy.
       PVector c = new PVector(p.position.x - ground.x1, p.position.y - ground.y1);
@@ -333,12 +346,28 @@ class Game {
          }
        }
      }
+     /*
+      * Tank and tank.
+      */
+      if(p1 != null && p2 != null) {
+        PVector dist = new PVector(p2.position.x - p1.position.x, p2.position.y - p1.position.y);
+        if(dist.mag() <= p1.width) {
+          Contact cn = new Contact(p1, p2, 1, dist.normalize());
+          contacts.add(cn);
+        }
+      }
   }
   
   void endTurn(boolean hit) {
     p1turn = !p1turn;
     hitScreenEnd = System.currentTimeMillis()+3000;
     this.hit = hit;
+    if(hit) {
+      // Reset locations of tanks.
+      p1.position.x = 10; // Could use static final int variables, but this is fine.
+      p2.position.x = width-110;
+    }
+    fired = false;
   } 
   
   /*

@@ -37,7 +37,7 @@ class Particle {
     
     velocity.mult(DAMPING); // Hack in the drag for now
     
-    if((position.x < 0) || (position.x > width)) velocity.x = -velocity.x;
+    
     if((position.y > height)) velocity.y = -velocity.y; // We will actually do collision detect on particles with the ground, this is just a backup.
     
     // Zero the force accumulator

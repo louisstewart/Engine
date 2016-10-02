@@ -28,7 +28,7 @@ class Tank extends Block {
       velocity.mult(MAX_SPEED);
     }
     
-    if((position.x < 0) || (position.x > Engine.GAME_WIDTH)) velocity.x = -velocity.x;
+    if((position.x < 0) || (position.x+this.width > Engine.GAME_WIDTH)) velocity.x = -velocity.x;
     if((position.y > Engine.GAME_HEIGHT)) velocity.y = -velocity.y; // We will actually do collision detect on particles with the ground, this is just a backup.
     
     // Zero the force accumulator
