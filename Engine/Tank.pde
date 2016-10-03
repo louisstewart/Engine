@@ -22,8 +22,8 @@ class Tank extends Block {
     
     velocity.mult(DAMPING); // Hack in the drag for now
     
+    // Clip speed to within the max speed range.
     if(velocity.mag() > MAX_SPEED){
-      println("here");
       velocity.normalize();
       velocity.mult(MAX_SPEED);
     }

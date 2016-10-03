@@ -1,13 +1,21 @@
+import ddf.minim.*;
+
 static int GROUND_LEVEL = 300;
 static PImage texture, grass, block, tRight, tLeft, wall;
 static int GAME_WIDTH = 1100, GAME_HEIGHT = 400;
 static PFont main, sans;
 Game game;
+Minim minim;
+static AudioPlayer fire, explode;
 
 // Specify canvas size, initialise PVector variables
 void setup() {
   size(1100, 400, P2D) ;
   
+  // Sound
+  minim = new Minim(this);
+  fire = minim.loadFile("Explosion+1.wav");
+  explode = minim.loadFile("Explosion.wav");
   // Load in floor texture.
   texture = loadImage("texture.png"); // http://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis
   grass = loadImage("grass.png"); // Same as above.

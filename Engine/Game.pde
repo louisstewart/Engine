@@ -86,7 +86,12 @@ class Game {
   }
   
   /*
-   * Apply the forcces to all of the active particles in the game.
+   * Apply the forces to all of the active particles in the game.
+   *
+   * Instead of just blindly calling integrate on the particles that are known,
+   * could instead create a list of particles that are active on the field, and then
+   * loop over list and call update on each node. However, since we know full game state,
+   * this is simpler.
    */
   void integrate() {
     if(p != null) p.integrate();
@@ -207,10 +212,12 @@ class Game {
         power.normalize();
         power.mult(12);
       }
-      p = new Projectile(new PVector(xStart,yStart), power, 0.2f, 5) ; // Create Particle.
+      p = new Projectile(new PVector(xStart,yStart), power, 0.3f, 5) ; // Create Particle.
       forceReg.add(gravity, p);
       forceReg.add(wind, p);
       fired = true;
+      Engine.fire.rewind();
+      Engine.fire.play();
     }
   }
   
@@ -221,6 +228,7 @@ class Game {
   private void detectCollisions() {
     boolean destroyed = false;
     if(p != null) {
+      // Walls.
       if(p.position.x > width || p.position.x < 0) {
         forceReg.remove(wind, p);
         forceReg.remove(gravity, p);
@@ -359,6 +367,8 @@ class Game {
   }
   
   void endTurn(boolean hit) {
+    Engine.explode.rewind();
+    Engine.explode.play();
     p1turn = !p1turn;
     hitScreenEnd = System.currentTimeMillis()+3000;
     this.hit = hit;
