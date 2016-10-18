@@ -1,0 +1,1 @@
+MINIM needs to be installed in Processing for the sounds to work.

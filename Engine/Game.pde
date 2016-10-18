@@ -136,11 +136,11 @@ class Game {
       drawTanks();
 
       stroke(0);    
-      if (mousePressed) line(xStart, yStart, mouseX, mouseY);
+      if (mousePressed && !fired) line(xStart, yStart, mouseX, mouseY);
       PVector temp = new PVector((mouseX - xStart), (mouseY - yStart));
       int angle = 0;
       int power = 0;
-      if(mousePressed) {
+      if(mousePressed && !fired) {
         angle = int(-temp.heading()*180.0/PI); // Convert from rad to deg.
         power = int(temp.mag()); // Get magnitude.
         if(power > 150) power = 150;
@@ -336,7 +336,7 @@ class Game {
          if(temp == null) continue;
          PVector dist = new PVector(temp.position.x - p1.position.x, 0);
          if(dist.mag() <= p1.width) {
-           Contact cn = new Contact(p1, null, 0.5, dist.normalize());
+           Contact cn = new Contact(p1, null, 1, dist.normalize());
            contacts.add(cn);
            break;
          }
@@ -348,7 +348,7 @@ class Game {
          if(temp == null) continue;
          PVector dist = new PVector(temp.position.x - p2.position.x, 0);
          if(dist.mag() <= temp.width) { // Tank particle is top left of tank, and block is also top left, so need to check box width this time.
-           Contact cn = new Contact(p2, null, 0.5, dist.normalize());
+           Contact cn = new Contact(p2, null, 1, dist.normalize());
            contacts.add(cn);
            break;
          }
@@ -369,7 +369,7 @@ class Game {
   void endTurn(boolean hit) {
     Engine.explode.rewind();
     Engine.explode.play();
-    p1turn = !p1turn;
+    
     hitScreenEnd = System.currentTimeMillis()+3000;
     this.hit = hit;
     if(hit) {
@@ -377,6 +377,7 @@ class Game {
       p1.position.x = 10; // Could use static final int variables, but this is fine.
       p2.position.x = width-110;
     }
+    p1turn = !p1turn;
     fired = false;
   } 
   
